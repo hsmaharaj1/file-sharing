@@ -1,2 +1,4 @@
 # Files to Ignore
 File_Sharing_App.fig
+bluetooth.py
+server.py
