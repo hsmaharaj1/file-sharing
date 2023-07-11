@@ -6,6 +6,8 @@ import subprocess
 import re
 import http.server
 import shutil
+import requests
+from bs4 import BeautifulSoup
 
 # These two classes are for Multi-Threading Purposes
 class WorkerSignals(QtCore.QObject):
@@ -34,9 +36,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.sendbtn.installEventFilter(self)
         self.selectbtn.installEventFilter(self)
+        self.receivebtn.installEventFilter(self)
 
         self.sendbtn.clicked.connect(self.send_func)
         self.selectbtn.clicked.connect(self.select_func)
+        self.receivebtn.clicked.connect(self.receive_func)
+
+        self.model = QtGui.QStandardItemModel()
+        self.files_list.setModel(self.model)
+
+        self.files_list.setStyleSheet("QListView::item{color: white;}")
 
     def server_start(self):
         directory = "./temp_dir"
@@ -46,10 +55,9 @@ class MainWindow(QtWidgets.QMainWindow):
         handler = http.server.SimpleHTTPRequestHandler
 
         # Start the HTTP server
-        with socketserver.TCPServer(server_address, handler) as httpd:
+        with socketserver.TCPServer(server_address, handler) as self.httpd:
             print(f"Serving HTTP on {server_address[0]}:{server_address[1]} from '{directory}'...")
-            httpd.serve_forever()
-            return
+            self.httpd.serve_forever()
 
     def send_func(self):
         # self.server_start()
@@ -84,7 +92,52 @@ class MainWindow(QtWidgets.QMainWindow):
         new_file_path = os.path.join(temp_dir, os.path.basename(file_path))
         shutil.copy2(file_path, new_file_path)
 
+        item  = QtGui.QStandardItem(os.path.basename(file_path))
+        self.model.appendRow(item)
+
         print("File Copied to: ", new_file_path)
+
+    def receive_func(self):
+        ip = self.ip_add.toPlainText()
+        print(ip)
+        download_worker = Worker(self.download_data, url=ip)
+        self.pool.start(download_worker)
+
+    def download_data(self, url):
+        # self.url = 'http://192.168.29.161:8000'  # Replace with the URL of the server directory
+        self.download_folder = '../downloads'  # Folder to save the downloaded files
+
+        # Create the download folder if it doesn't exist
+        if not os.path.exists(self.download_folder):
+            os.makedirs(self.download_folder)
+
+        modified_url = 'http://' + url
+        print(modified_url)
+        response = requests.get(modified_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        for link in soup.find_all('a'):
+            file_url = link.get('href')
+            if file_url.endswith('/'):
+                continue  # Skip directories
+
+            file_name = os.path.basename(file_url)
+            file_path = os.path.join(self.download_folder, file_name)
+            file_response = requests.get(modified_url + '/' + file_url)
+
+            with open(file_path, 'wb') as file:
+                file.write(file_response.content)
+
+            print(f"Downloaded: {file_name}")
+
+        print("All files downloaded successfully.")
+    
+    def closeEvent(self, event):
+        self.pool.clear()
+
+        if self.httpd:
+            self.httpd.shutdown()
+        event.accept()
 
 App = QtWidgets.QApplication(sys.argv)
 window = MainWindow()

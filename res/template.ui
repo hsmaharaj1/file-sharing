@@ -118,6 +118,25 @@ border-radius: 4px;</string>
      <string>SELECT FILES</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="receivebtn">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>140</y>
+      <width>93</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: white;
+font-size: 16px;
+border-radius: 4px;
+background-color: rgb(144, 0, 216);</string>
+    </property>
+    <property name="text">
+     <string>RECEIVE</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
