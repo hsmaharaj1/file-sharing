@@ -74,7 +74,9 @@ font-size: 15px;</string>
     <property name="styleSheet">
      <string notr="true">border-radius: 7px;
 border: 2px dashed #484848;
-background: rgba(217, 217, 217, 0.00);</string>
+background: rgba(217, 217, 217, 0.00);
+color: white;
+font-size: 10px;</string>
     </property>
    </widget>
    <widget class="QPushButton" name="sendbtn">
@@ -135,6 +137,22 @@ background-color: rgb(144, 0, 216);</string>
     </property>
     <property name="text">
      <string>RECEIVE</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>10</y>
+      <width>581</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap>Wifi Warning.png</pixmap>
     </property>
    </widget>
   </widget>

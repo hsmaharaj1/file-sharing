@@ -26,7 +26,7 @@ class Worker(QtCore.QRunnable):
         self.fun(*self.args, **self.kwargs)
         self.signals.finished.emit()
 
-
+# Main Class
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -104,13 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pool.start(download_worker)
 
     def download_data(self, url):
-        # self.url = 'http://192.168.29.161:8000'  # Replace with the URL of the server directory
-        self.download_folder = '../downloads'  # Folder to save the downloaded files
-
-        # Create the download folder if it doesn't exist
-        if not os.path.exists(self.download_folder):
-            os.makedirs(self.download_folder)
-
+        download_location = QtWidgets.QFileDialog.getExistingDirectory(self, "Save Location", "", QtWidgets.QFileDialog.ShowDirsOnly)
         modified_url = 'http://' + url
         print(modified_url)
         response = requests.get(modified_url)
@@ -122,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue  # Skip directories
 
             file_name = os.path.basename(file_url)
-            file_path = os.path.join(self.download_folder, file_name)
+            file_path = os.path.join(download_location, file_name)
             file_response = requests.get(modified_url + '/' + file_url)
 
             with open(file_path, 'wb') as file:
@@ -134,10 +128,12 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def closeEvent(self, event):
         self.pool.clear()
-
-        if self.httpd:
-            self.httpd.shutdown()
-        event.accept()
+        try:
+            if self.httpd:
+                self.httpd.shutdown()
+            event.accept()
+        except:
+            pass
 
 App = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
