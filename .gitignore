@@ -2,7 +2,11 @@
 File_Sharing_App.fig
 bluetooth.py
 server.py
+main.spec
+new_main.py
 
 #Folders
 /temp_dir
 /downloads
+/build
+/dist

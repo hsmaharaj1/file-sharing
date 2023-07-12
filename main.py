@@ -7,12 +7,15 @@ import re
 import http.server
 import shutil
 import requests
+import socket
 from bs4 import BeautifulSoup
 
-# These two classes are for Multi-Threading Purposes
+# WorkerSignals class for defining custom signals
 class WorkerSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(str)
 
+# Worker class for performing background tasks
 class Worker(QtCore.QRunnable):
     def __init__(self, fun, *args, **kwargs):
         super(Worker, self).__init__()
@@ -23,8 +26,12 @@ class Worker(QtCore.QRunnable):
     
     @QtCore.pyqtSlot()
     def run(self):
-        self.fun(*self.args, **self.kwargs)
-        self.signals.finished.emit()
+        try:
+            self.fun(*self.args, **self.kwargs)
+        except Exception as e:
+            self.signals.error.emit(str(e))
+        finally:
+            self.signals.finished.emit()
 
 # Main Class
 class MainWindow(QtWidgets.QMainWindow):
@@ -33,10 +40,6 @@ class MainWindow(QtWidgets.QMainWindow):
         uic.loadUi('./res/template.ui', self)
 
         self.pool = QtCore.QThreadPool.globalInstance() # For Multithreading Purpose
-
-        self.sendbtn.installEventFilter(self)
-        self.selectbtn.installEventFilter(self)
-        self.receivebtn.installEventFilter(self)
 
         self.sendbtn.clicked.connect(self.send_func)
         self.selectbtn.clicked.connect(self.select_func)
@@ -60,23 +63,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.httpd.serve_forever()
 
     def send_func(self):
-        # self.server_start()
         worker_server = Worker(self.server_start)
+        worker_server.signals.finished.connect(self.server_finished)
+        worker_server.signals.error.connect(self.server_error)
         self.pool.start(worker_server)
+
         self.ip_add.clear()
-        result = subprocess.run(["netsh", "interface", "ip", "show", "addresses"], capture_output=True, text=True)
-
-        # Extract the IPv4 address from the output
-        ipv4_address = re.search(r"IP Address:\s+([\d.]+)", result.stdout)
-
+        ipv4_address = self.get_ipv4_address()
         if ipv4_address:
-            print("IPv4 Address:", ipv4_address.group(1))
-            self.address = ipv4_address.group(1) + ':8000' 
+            print("IPv4 Address:", ipv4_address)
+            self.address = ipv4_address + ':8000'
             self.ip_add.setText(self.address)
         else:
             print("IPv4 Address not found.")
 
-    
     def select_func(self):
         file_url, _ = QtWidgets.QFileDialog.getOpenFileUrl(self, "Select Files")
         file_path = file_url.toLocalFile()
@@ -92,19 +92,18 @@ class MainWindow(QtWidgets.QMainWindow):
         new_file_path = os.path.join(temp_dir, os.path.basename(file_path))
         shutil.copy2(file_path, new_file_path)
 
-        item  = QtGui.QStandardItem(os.path.basename(file_path))
+        item = QtGui.QStandardItem(os.path.basename(file_path))
         self.model.appendRow(item)
-
         print("File Copied to: ", new_file_path)
 
     def receive_func(self):
         ip = self.ip_add.toPlainText()
         print(ip)
-        download_worker = Worker(self.download_data, url=ip)
-        self.pool.start(download_worker)
+        download_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Save Location", "", QtWidgets.QFileDialog.ShowDirsOnly)
+        worker_download = Worker(self.download_data, url=ip, download_location=download_path)
+        self.pool.start(worker_download)
 
-    def download_data(self, url):
-        download_location = QtWidgets.QFileDialog.getExistingDirectory(self, "Save Location", "", QtWidgets.QFileDialog.ShowDirsOnly)
+    def download_data(self, url, download_location):
         modified_url = 'http://' + url
         print(modified_url)
         response = requests.get(modified_url)
@@ -125,17 +124,38 @@ class MainWindow(QtWidgets.QMainWindow):
             print(f"Downloaded: {file_name}")
 
         print("All files downloaded successfully.")
-    
+
+    def server_finished(self):
+        print("Server started successfully.")
+
+    def server_error(self, error):
+        print("Error occurred while starting the server:", error)
+
+    def receive_finished(self):
+        print("File receive completed successfully.")
+
+    def receive_error(self, error):
+        print("Error occurred while receiving files:", error)
+
     def closeEvent(self, event):
         self.pool.clear()
         try:
-            if self.httpd:
+            if self.httpd is not None:
                 self.httpd.shutdown()
             event.accept()
         except:
-            pass
+            return
+    
+    def get_ipv4_address(self):
+        interfaces = socket.getaddrinfo(socket.gethostname(), None)
+        for interface in interfaces:
+            address = interface[4][0]
+            if ':' not in address:
+                return address
+        return None
 
-App = QtWidgets.QApplication(sys.argv)
-window = MainWindow()
-window.show()
-App.exec_()
+if __name__ == '__main__':
+    App = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(App.exec_())
