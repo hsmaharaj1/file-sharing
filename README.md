@@ -25,7 +25,7 @@ File Sharing App is a simple application that allows users to share files betwee
 
 1. Run the application using the following command:
 
-`python main.py`
+    `python main.py`
 
 2. The application window will appear with options to send and receive files.
 3. Click on the "Send" button to start the HTTP server and obtain the IP address.
