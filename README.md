@@ -7,8 +7,6 @@ File Sharing App is a simple application that allows users to share files betwee
 - Send files from one device to another on the same local network.
 - Receive files from other devices on the local network.
 - Easy-to-use graphical interface.
-- Supports selecting and sending multiple files at once.
-- Displays the progress of file transfers.
 
 ## Requirements
 
@@ -40,7 +38,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Author
 
-- Author: Himanshu Sekhar
+- Author: Himanshu Sekhar Maharaj
 - Email: hsmaharaj1@gmail.com
 
 
