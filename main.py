@@ -72,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ipv4_address = self.get_ipv4_address()
         if ipv4_address:
             print("IPv4 Address:", ipv4_address)
-            self.address = ipv4_address + ':8000'
+            self.address = ipv4_address
             self.ip_add.setText(self.address)
         else:
             print("IPv4 Address not found.")
@@ -87,17 +87,19 @@ class MainWindow(QtWidgets.QMainWindow):
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
-        os.makedirs(temp_dir, exist_ok=True)
+        try:
+            os.makedirs(temp_dir, exist_ok=True)
 
-        new_file_path = os.path.join(temp_dir, os.path.basename(file_path))
-        shutil.copy2(file_path, new_file_path)
+            new_file_path = os.path.join(temp_dir, os.path.basename(file_path))
+            shutil.copy2(file_path, new_file_path)
 
-        item = QtGui.QStandardItem(os.path.basename(file_path))
-        self.model.appendRow(item)
-        print("File Copied to: ", new_file_path)
-
+            item = QtGui.QStandardItem(os.path.basename(file_path))
+            self.model.appendRow(item)
+            print("File Copied to: ", new_file_path)
+        except:
+            print("No File is Selected")
     def receive_func(self):
-        ip = self.ip_add.toPlainText()
+        ip = self.ip_add.toPlainText() + ':8000'
         print(ip)
         download_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Save Location", "", QtWidgets.QFileDialog.ShowDirsOnly)
         worker_download = Worker(self.download_data, url=ip, download_location=download_path)
