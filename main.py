@@ -1,9 +1,13 @@
+'''
+File Sharing App 2023
+Author: Himanshu Sekhar
+File Type: Main
+'''
+
 from PyQt5 import uic, QtCore, QtWidgets, QtGui
 import sys
 import os
 import socketserver
-import subprocess
-import re
 import http.server
 import shutil
 import requests
